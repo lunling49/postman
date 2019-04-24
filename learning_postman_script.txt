@@ -1,0 +1,66 @@
+postman的脚本执行流程：
+	pre-request script --> request --> response --> test script
+pre-request脚本，是在对API进行请求之前的脚本，一般用于动态生成参数、json数据包、链接地址等。
+test脚本，其实更应该叫post-request，是在完成API访问并得到其response回应之后运行的脚本，一般用于获取response的内容，用于之后对于别的资源的请求，如获取页面标题和内容等。
+
+运行脚本要求：
+注意，pre-request脚本，在里面直接写代码就可以了，但是test脚本需要在某个指定的函数pm.test(...)中执行才会被识别，且作为test脚本运行。例如：
+pm.test("test-test",function(){
+    // 需要执行的代码
+});
+pm.test()中第一个参数是测试描述（会在测试结果栏显示，应和其他测试描述做区分），第二个参数是一个函数，具体执行代码都在这个函数中运行。
+另外，pm对象是postman的主要对象，所有的内置函数，数据调用等，都需要通过它来实现。
+
+脚本调试：
+调试要打印的话，一般都是用console.log(...)，这样就能在console中看到。
+如果postman是Chrome APP的话，直接在Chrome浏览器的开发者工具里调试。
+如果是桌面软件，则需打开内置的console看调试信息，在左下角的第三个图标。
+
+常用语句code snippets
+一般在脚本编写栏的右边都会有常用语句片段，点击就会出来代码
+获取responses返回内容
+var rsb = responseBody;// 是字符串格式
+
+获取环境变量
+var v = pm.environment.get("变量名称");
+
+设置环境变量，只能存储字符串，如果是对象的话则无法再下次运行时获取到内容
+如需要存储json数据，可以用JSON.stringify(...)存储，再用JOSN.parse(...)转化为对象使用
+pm.environment.set("变量名称",变量内容);
+
+清除某个环境变量
+pm.environment.unset("环境变量名");
+
+获取全局变量和普通变量
+var gb = pm.globals.get("全局变量名");
+var nm = pm.variables.get("普通变量名");
+
+Javascript 获取变量类型
+console.log( typeof pm.environment );
+
+测试结果：
+除了以上的具体功能代码外，经常还需要返回一个结果，告诉postman这个测试是pass还是fail，默认是pass
+这里返回值不是简单的return语句，一般是通过pm.expect()或test[]这两个地方返回测试结果
+pm.expect() 期待什么，才能通过测试
+.to.be() 要求它是什么，才能通过测试
+.to.have() 必须有什么，才能通过测试
+另外，同样的测试结果，实际上还有更简单的写法，即不通过pm对象，而是内置tests对象，常用操作如下：
+反应时间必须少于200毫秒
+tests["Response time is less than 200ms"] = responseTime < 200;
+
+判断反应代号是否等于某一个指定的代号
+tests["Status code name has string"] = responseCode.name.has("Created");
+根据以上用法，猜测tests是一个json格式的对象，tests[...]括号内的字符串是测试的描述，=后面是判断语句，然后将True或False赋予未tests[...]的值，最后postman轮训所有tests对象里的参数，并返回pass or fail的结果。
+
+常用的返回测试结果的内置函数：
+期待返回结果必须包含某一段内容
+pm.expect(从response里获取的字符串).to.include("必须包含的内容");
+
+返回body值必须完全等于某一段内容
+pm.response.to.have.body("必须等于的内容");
+
+反应时间必须少于200毫秒
+pm.expect(pm.response.responseTime).to.be.below(200);
+
+必须返回某一个状态，如"Created"
+pm.response.to.have.status("状态名");
